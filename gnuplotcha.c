@@ -16,24 +16,25 @@
 
 static char * const argsgnuplot[] = { "gnuplot", "-persist", NULL };
 
-FILE *gnuplotcha_open() {
-	char * const args[] = { "gnuplot", "-persist", NULL };
+FILE *gnuplotcha_open()
+{
 	int infd_l[2];
 	pipe(infd_l);
-	if(!fork()) {
+	if(!fork())
+	{
 		/* gnuplot */
 		close(infd_l[1]);
 		dup2(infd_l[0], 0);
 		execvp(argsgnuplot[0], argsgnuplot);
-		fprintf(stderr, "Failed to exec %s\n", args[0]);
+		fprintf(stderr, "Failed to exec %s\n", argsgnuplot[0]);
 		exit(1);
 	}
 	return fdopen(infd_l[1], "w");
 }
 
 void gnuplotcha_mkvid(char *outfile, int vidwidth, int vidheight, float fps,
-	void (*plotsetup)(FILE *gnuplot, void *arg), void *obj1,
-	int (*plotframe)(FILE *gnuplot, int frame, void *arg), void *obj2)
+		void (*plotsetup)(FILE *gnuplot, void *arg), void *obj1,
+		int (*plotframe)(FILE *gnuplot, int frame, void *arg), void *obj2)
 {
 	char framerate[10], size[43];
 	snprintf(framerate, sizeof(framerate), "%.3f", fps);
@@ -43,7 +44,8 @@ void gnuplotcha_mkvid(char *outfile, int vidwidth, int vidheight, float fps,
 	int plot_infd[2], ff_infd[2], frame;
 	pipe(plot_infd);
 	pipe(ff_infd);
-	if(!fork()) {
+	if(!fork())
+	{
 		/* gnuplot */
 		close(plot_infd[1]);
 		dup2(plot_infd[0], 0);
@@ -54,7 +56,8 @@ void gnuplotcha_mkvid(char *outfile, int vidwidth, int vidheight, float fps,
 		exit(1);
 	}
 	close(plot_infd[0]);
-	if(!fork()) {
+	if(!fork())
+	{
 		/* ffmpeg */
 		close(plot_infd[1]);
 		close(ff_infd[1]);
@@ -75,66 +78,78 @@ void gnuplotcha_mkvid(char *outfile, int vidwidth, int vidheight, float fps,
 }
 
 int gnuplotcha_plotadd(FILE *gplot, const int Nx, const int Ny,
-	const char *format, const enum with with, const int last, const char *opts, ...)
+		const char *format, const enum gpcha_opts opts, const char *extra, ...)
 {
-	static int plot_count = 0;
 	va_list ap;
 
-	if(!gplot || !format || Nx < 0 || Ny < 0)
-		return -1;
-	fprintf(gplot, "%s '-' binary record=(%d,%d) format='%s' ", plot_count ? "," : "plot",  Nx, Ny, format);
-	if(opts) {
-		va_start(ap, opts);
-		vfprintf(gplot, opts, ap);
+	fprintf(gplot, "%s '-' binary record=(%d,%d) format='%s' ", (opts & GPCHA_FirstPlot) ? "plot" : ",",  Nx, Ny, format);
+	if(opts)
+	{
+		va_start(ap, extra);
+		vfprintf(gplot, extra, ap);
 		va_end(ap);
 	}
-	switch(with) {
-		case GPCHA_Points:
-			fprintf(gplot, " with points ");
-			break;
-		case GPCHA_Lines:
-			fprintf(gplot, " with lines ");
-			break;
-		case GPCHA_Vectors:
-			fprintf(gplot, " with vectors ");
-			break;
-		default:
-			fprintf(gplot, " with points ");
+	switch(opts & GPCHA_PlotTypeMask)
+	{
+		case GPCHA_Points:  fprintf(gplot, " with points " ); break;
+		case GPCHA_Lines:   fprintf(gplot, " with lines "  ); break;
+		case GPCHA_Vectors: fprintf(gplot, " with vectors "); break;
+		case GPCHA_Image:   fprintf(gplot, " with image "  ); break;
+		default:            fprintf(gplot, " with points " );
 	}
-	if(last) {
-		plot_count = 0;
+	if(opts & GPCHA_LastPlot)
+	{
 		fprintf(gplot, "\n");
-	}
-	else
-		plot_count++;
-	fflush(gplot);
-	return plot_count;
-}
-
-int gnuplotcha_setrange(FILE *gplot, char axis, double min, double max) {
-	if(isfinite(min)) {
-		if(isfinite(max)) fprintf(gplot, "set %crange[%lf:%lf]\n", axis, min, max);
-		else fprintf(gplot, "set %crange[%lf:*]\n", axis, min);
-	}
-	else {
-		if(isfinite(max)) fprintf(gplot, "set %crange[*:%lf]\n", axis, max);
-		else fprintf(gplot, "set %crange[*:*]\n", axis);
 	}
 	fflush(gplot);
 	return 0;
 }
 
-int gnuplotcha_senddata1d(FILE *gplot, void *data, const int Nx, const int fieldsize) {
+int gnuplotcha_setrange(FILE *gplot, char axis, double min, double max)
+{
+	if(isfinite(min))
+	{
+		if(isfinite(max)) fprintf(gplot, "set %crange[%lf:%lf]\n", axis, min, max);
+		else              fprintf(gplot, "set %crange[%lf:*]\n"  , axis, min);
+	}
+	else
+	{
+		if(isfinite(max)) fprintf(gplot, "set %crange[*:%lf]\n", axis, max);
+		else              fprintf(gplot, "set %crange[*:*]\n"  , axis);
+	}
+	fflush(gplot);
+	return 0;
+}
+
+int gnuplotcha_senddata1d(FILE *gplot, void *data, const size_t Nx, const size_t fieldsize)
+{
 	return write(fileno(gplot), data, fieldsize*Nx);
 }
 
-int gnuplotcha_senddata2d(FILE *gplot, void **data, const int Nx, const int Ny, const int offx, const int fieldsize) {
-	int j, count = 0;
-	int fplot = fileno(gplot);
-	int offsetx = fieldsize*offx;
-	int size = fieldsize*Nx;
+int gnuplotcha_senddata1d_stride(FILE *gplot, void *data, const size_t Nx, const size_t offx, const size_t stride, const size_t fieldsize)
+{
+	size_t i, count = 0;
+	const int fplot = fileno(gplot);
+	const size_t noffx = offx*fieldsize;
+	const size_t nNx = Nx*stride+noffx;
+	for ( i = noffx; i < nNx; i+=stride )
+	{
+		count += write(fplot, data+i, fieldsize);
+	}
+	fflush(gplot);
+	return count;
+}
+
+int gnuplotcha_senddata2d(FILE *gplot, void **data, const size_t Nx, const size_t Ny, const size_t offx, const size_t fieldsize)
+{
+	size_t j, count = 0;
+	const int fplot = fileno(gplot);
+	const size_t noffx = fieldsize*offx;
+	const size_t nsize = fieldsize*Nx;
 	for(j = 0; j < Ny; j++)
-		count += write(fplot, data[j] + offsetx, size);
+	{
+		count += write(fplot, data[j] + noffx, nsize);
+	}
 	fflush(gplot);
 	return count;
 }

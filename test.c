@@ -29,8 +29,8 @@ int main(int argc, char **argv) {
 
 	fprintf(gp, "set title 'can still send stuff like this'\n");
 
-	gnuplotcha_plotadd(gp, 2, 1, "%lf%lf", GPCHA_Points, GPCHA_NotLastPlot, "using 1:($2*%lf) title '%d Points (y scaled by %.2lf)'", 5.0, 2, 5.0);
-	gnuplotcha_plotadd(gp, 3, 4, "%lf%lf", GPCHA_Vectors, GPCHA_LastPlot, "using 0:-1:1:2 title 'Vectors'");
+	gnuplotcha_plotadd(gp, 2, 1, "%lf%lf", GPCHA_Points | GPCHA_FirstPlot, "using 1:($2*%lf) title '%d Points (y scaled by %.2lf)'", 5.0, 2, 5.0);
+	gnuplotcha_plotadd(gp, 3, 4, "%lf%lf", GPCHA_Vectors | GPCHA_LastPlot, "using 0:-1:1:2 title 'Vectors'");
 
 	gnuplotcha_senddata1d(gp, data, 2, sizeof(double)*2);
 	gnuplotcha_senddata2d(gp, (void **)data2, 3, 4, 0, sizeof(double)*2);
