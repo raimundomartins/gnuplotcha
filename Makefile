@@ -2,11 +2,13 @@
 GNUPLOTCHAFILES = gnuplotcha.c
 LIBS = -lm
 
+all: test snakeplot
+
 test:
 	gcc $(GNUPLOTCHAFILES) $(LIBS) -Wall -o test test.c
 
-snakeplot
+snakeplot:
 	gcc $(GNUPLOTCHAFILES) $(LIBS) -lncurses -Wall -o snakeplot snakeplot.c
 
 clean:
-	rm test snakeplot gnuplotcha.o
+	rm -f test snakeplot
