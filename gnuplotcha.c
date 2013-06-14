@@ -82,7 +82,15 @@ int gnuplotcha_plotadd(FILE *gplot, const int Nx, const int Ny,
 {
 	va_list ap;
 
-	fprintf(gplot, "%s '-' binary record=(%d,%d) format='%s' ", (opts & GPCHA_FirstPlot) ? "plot" : ",",  Nx, Ny, format);
+	fprintf(gplot, "%s '-' binary ", (opts & GPCHA_FirstPlot) ? "plot" : ",");
+	if(opts & GPCHA_Array)
+	{
+		fprintf(gplot, "array=%dx%d format='%s' ",  Nx, Ny, format);
+	}
+	else
+	{
+		fprintf(gplot, "record=(%d,%d) format='%s' ",  Nx, Ny, format);
+	}
 	if(opts)
 	{
 		va_start(ap, extra);
