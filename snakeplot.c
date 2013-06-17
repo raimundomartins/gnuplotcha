@@ -108,8 +108,8 @@ table* init_table( int nrows, int ncols )
 
     //init gnuplotcha
     t->gp = gnuplotcha_open();
-    gnuplotcha_setrange(t->gp,'x',0,ncols);
-    gnuplotcha_setrange(t->gp,'y',0,nrows);
+    gnuplotcha_setrange(t->gp,"x",0,ncols);
+    gnuplotcha_setrange(t->gp,"y",0,nrows);
 
     put_fruit( t );
     

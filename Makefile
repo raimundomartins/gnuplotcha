@@ -4,10 +4,10 @@ LIBS = -lm
 
 all: test snakeplot
 
-test:
+test: test.c $(GNUPLOTCHAFILES)
 	gcc $(GNUPLOTCHAFILES) $(LIBS) -Wall -o test test.c
 
-snakeplot:
+snakeplot: snakeplot.c $(GNUPLOTCHAFILES)
 	gcc $(GNUPLOTCHAFILES) $(LIBS) -lncurses -Wall -o snakeplot snakeplot.c
 
 clean:

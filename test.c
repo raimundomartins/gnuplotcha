@@ -24,8 +24,8 @@ int main(int argc, char **argv) {
 
 	FILE *gp = gnuplotcha_open();
 
-	gnuplotcha_setrange(gp, 'x', -1, 12);
-	gnuplotcha_setrange(gp, 'y', -1, 12);
+	gnuplotcha_setrange(gp, "x", -1, 12);
+	gnuplotcha_setrange(gp, "y", -1, 12);
 
 	fprintf(gp, "set title 'can still send stuff like this'\n");
 

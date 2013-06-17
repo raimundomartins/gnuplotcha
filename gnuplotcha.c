@@ -78,7 +78,7 @@ void gnuplotcha_mkvid(char *outfile, int vidwidth, int vidheight, float fps,
 }
 
 int gnuplotcha_plotadd(FILE *gplot, const int Nx, const int Ny,
-		const char *format, const enum gpcha_opts opts, const char *extra, ...)
+		const char * const format, const enum gpcha_opts opts, const char * const extra, ...)
 {
 	va_list ap;
 
@@ -91,7 +91,7 @@ int gnuplotcha_plotadd(FILE *gplot, const int Nx, const int Ny,
 	{
 		fprintf(gplot, "record=(%d,%d) format='%s' ",  Nx, Ny, format);
 	}
-	if(opts)
+	if(extra)
 	{
 		va_start(ap, extra);
 		vfprintf(gplot, extra, ap);
@@ -113,17 +113,17 @@ int gnuplotcha_plotadd(FILE *gplot, const int Nx, const int Ny,
 	return 0;
 }
 
-int gnuplotcha_setrange(FILE *gplot, char axis, double min, double max)
+int gnuplotcha_setrange(FILE *gplot, const char * const axis, double min, double max)
 {
 	if(isfinite(min))
 	{
-		if(isfinite(max)) fprintf(gplot, "set %crange[%lf:%lf]\n", axis, min, max);
-		else              fprintf(gplot, "set %crange[%lf:*]\n"  , axis, min);
+		if(isfinite(max)) fprintf(gplot, "set %srange[%lf:%lf]\n", axis, min, max);
+		else              fprintf(gplot, "set %srange[%lf:*]\n"  , axis, min);
 	}
 	else
 	{
-		if(isfinite(max)) fprintf(gplot, "set %crange[*:%lf]\n", axis, max);
-		else              fprintf(gplot, "set %crange[*:*]\n"  , axis);
+		if(isfinite(max)) fprintf(gplot, "set %srange[*:%lf]\n", axis, max);
+		else              fprintf(gplot, "set %srange[*:*]\n"  , axis);
 	}
 	fflush(gplot);
 	return 0;
@@ -131,18 +131,17 @@ int gnuplotcha_setrange(FILE *gplot, char axis, double min, double max)
 
 int gnuplotcha_senddata1d(FILE *gplot, void *data, const size_t Nx, const size_t fieldsize)
 {
-	return write(fileno(gplot), data, fieldsize*Nx);
+	return fwrite(data, fieldsize, Nx, gplot);
 }
 
 int gnuplotcha_senddata1d_stride(FILE *gplot, void *data, const size_t Nx, const size_t offx, const size_t stride, const size_t fieldsize)
 {
 	size_t i, count = 0;
-	const int fplot = fileno(gplot);
 	const size_t noffx = offx*fieldsize;
 	const size_t nNx = Nx*stride+noffx;
-	for ( i = noffx; i < nNx; i+=stride )
+	for(i = noffx; i < nNx; i += stride)
 	{
-		count += write(fplot, data+i, fieldsize);
+		count += fwrite((char *)data+i, fieldsize, 1, gplot);
 	}
 	fflush(gplot);
 	return count;
@@ -151,12 +150,10 @@ int gnuplotcha_senddata1d_stride(FILE *gplot, void *data, const size_t Nx, const
 int gnuplotcha_senddata2d(FILE *gplot, void **data, const size_t Nx, const size_t Ny, const size_t offx, const size_t fieldsize)
 {
 	size_t j, count = 0;
-	const int fplot = fileno(gplot);
 	const size_t noffx = fieldsize*offx;
-	const size_t nsize = fieldsize*Nx;
 	for(j = 0; j < Ny; j++)
 	{
-		count += write(fplot, data[j] + noffx, nsize);
+		count += fwrite((char *)data[j]+noffx, fieldsize, Nx, gplot);
 	}
 	fflush(gplot);
 	return count;
