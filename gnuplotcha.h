@@ -17,7 +17,7 @@ enum gpcha_opts { GPCHA_Points = 0, GPCHA_Lines = 1, GPCHA_Vectors = 2, GPCHA_Im
 };
 
 #define GPCHA_PlotTypeMask ((1<<4)-1)
-#define GPCHA_PlotOnce (GPCHA_FirstPlot | GPCHA_LastPLot)
+#define GPCHA_PlotOnce (GPCHA_FirstPlot | GPCHA_LastPlot)
 #define GPCHA_PlotLimits(plotcount, max) (((!(plotcount)) << 4 /*FirstPlot*/) | (((plotcount) >= (max-1)) << 5 /*LastPlot*/))
 
 FILE *gnuplotcha_open();
